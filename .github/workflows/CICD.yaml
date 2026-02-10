@@ -234,7 +234,7 @@ jobs:
           exit 1
 
       - name: ZAP Scan
-        uses: zaproxy/action-baseline-scan@v0.13.0
+        uses: zaproxy/action-baseline@v0.13.0
         with:
           target: ${{ env.ZAP_TARGET }}
           cmd_options: '-a -I -x baseline.xml -J zap-report.json'
