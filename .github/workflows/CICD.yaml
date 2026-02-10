@@ -30,30 +30,8 @@ jobs:
   # STAGE 2: PARALLEL SCANS & TESTS (Before Build)
   # ============================================================
 
-  bandit:
-    name: Python Security Scan (Bandit)
-    runs-on: ubuntu-latest
-    needs: gitleaks
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install Bandit
-        run: pip install bandit
-      - name: Run Bandit
-        run: bandit -r . -f json -o bandit-results.json || true
-      - name: Upload Bandit Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: bandit-results
-          path: bandit-results.json
-
-  code-quality:
-    name: Code Quality Check
+  frontend-checks:
+    name: Frontend Tests & Linting
     runs-on: ubuntu-latest
     needs: gitleaks
     steps:
@@ -73,6 +51,8 @@ jobs:
           else
             npx eslint src
           fi
+      - name: Run Tests
+        run: npm test -- --passWithNoTests
 
   sast-semgrep:
     name: Semgrep SAST Scan
@@ -129,23 +109,6 @@ jobs:
           name: snyk-code-results
           path: snyk-code-results.json
 
-  application-tests:
-    name: Application Tests
-    runs-on: ubuntu-latest
-    needs: gitleaks
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Run tests
-        run: npm test -- --passWithNoTests
-
   # ============================================================
   # STAGE 3: BUILD
   # ============================================================
@@ -153,14 +116,15 @@ jobs:
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: [bandit, code-quality, sast-semgrep, snyk-code, application-tests]
+    needs: [frontend-checks, sast-semgrep, snyk-code]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Build and Save Image
         run: |
           docker build -t frontend-app:${{ github.sha }} .
-          docker save frontend-app:${{ github.sha }} | gzip > frontend-app-image.tar.gz
+          # Use gzip -1 for maximum speed
+          docker save frontend-app:${{ github.sha }} | gzip -1 > frontend-app-image.tar.gz
       - name: Upload image
         uses: actions/upload-artifact@v4
         with:
@@ -245,11 +209,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Download image
         uses: actions/download-artifact@v4
         with:
@@ -320,7 +279,7 @@ jobs:
   summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [gitleaks, bandit, code-quality, sast-semgrep, snyk-code, application-tests, build, security-scan, snyk-container, dast-zap, cosign-sign]
+    needs: [gitleaks, frontend-checks, sast-semgrep, snyk-code, build, security-scan, snyk-container, dast-zap, cosign-sign]
     if: always()
     steps:
       - name: Final Summary
