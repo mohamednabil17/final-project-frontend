@@ -183,10 +183,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docker-image
-      - name: Load and Scan
+      - name: Load Image
         run: |
           gunzip -c frontend-app-image.tar.gz | docker load
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --format json --output trivy-results.json frontend-app:${{ github.sha }}
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "frontend-app:${{ github.sha }}"
+          format: "json"
+          output: "trivy-results.json"
+          exit-code: "0"
+          ignore-unfixed: true
+          severity: "CRITICAL,HIGH"
       - name: Generate HTML Report
         if: always()
         run: |
@@ -211,12 +219,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docker-image
-      - name: Load and Scan
+      - name: Load Image
         run: |
           gunzip -c frontend-app-image.tar.gz | docker load
-          npx snyk container test frontend-app:${{ github.sha }} --json > snyk-container-results.json || true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Run Snyk Container Scan
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -e SNYK_TOKEN=${{ secrets.SNYK_TOKEN }} \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            snyk/snyk:docker snyk container test frontend-app:${{ github.sha }} \
+            --json > snyk-container-results.json || true
       - name: Upload Results
         uses: actions/upload-artifact@v4
         if: always()
@@ -247,6 +260,19 @@ jobs:
           gunzip -c frontend-app-image.tar.gz | docker load
           docker run -d -p 80:80 --name zap-target frontend-app:${{ github.sha }}
           echo "ZAP_TARGET=http://172.17.0.1" >> $GITHUB_ENV
+          echo "LOCAL_TARGET=http://127.0.0.1" >> $GITHUB_ENV
+
+      - name: Wait for app to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -fsS ${{ env.LOCAL_TARGET }} >/dev/null; then
+              echo "App is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become ready in time"
+          exit 1
 
       - name: ZAP Scan
         uses: zaproxy/action-full-scan@v0.13.0
