@@ -1,14 +1,34 @@
 {
   "name": "microservices-frontend",
+<<<<<<< HEAD
   "version": "1.0.0",
   "description": "Frontend application for the Microservices project",
   "private": true,
   "author": "Mohamed",
   "license": "ISC",
+=======
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4",
+    "@mui/material": "^5.14.0",
+    "@mui/icons-material": "^5.14.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0"
+  },
+>>>>>>> 4ed69460d7755f4d28401e22555eb81b477cd7bf
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+<<<<<<< HEAD
     "eject": "react-scripts eject",
     "lint": "eslint src"
   },
@@ -21,6 +41,9 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"
+=======
+    "eject": "react-scripts eject"
+>>>>>>> 4ed69460d7755f4d28401e22555eb81b477cd7bf
   },
   "eslintConfig": {
     "extends": [
