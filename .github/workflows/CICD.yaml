@@ -401,9 +401,9 @@ jobs:
 
       - name: Start app for ZAP scan
         run: |
-          docker run -d -p 8080:80 --name zap-target frontend-app:${{ github.sha }}
-          # In GitHub Actions, 172.17.0.1 is usually the host IP from within a container
-          echo "ZAP_TARGET=http://172.17.0.1:8080" >> $GITHUB_ENV
+          docker run -d -p 80:80 --name zap-target frontend-app:${{ github.sha }}
+          # In GitHub Actions, 172.17.0.1 is the host bridge IP reachable from ZAP container
+          echo "ZAP_TARGET=http://172.17.0.1" >> $GITHUB_ENV
 
       - name: Wait for app to be ready
         run: |
