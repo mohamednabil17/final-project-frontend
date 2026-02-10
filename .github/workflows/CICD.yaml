@@ -122,16 +122,18 @@ jobs:
         uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build and Save Image
+      - name: Build Image
         uses: docker/build-push-action@v5
         with:
           context: .
           tags: frontend-app:${{ github.sha }}
-          outputs: type=docker,dest=frontend-app-image.tar
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Compress with zstd
-        run: zstd -1 -T0 frontend-app-image.tar -o frontend-app-image.tar.zst
+      - name: Save and Compress Image
+        run: |
+          # Pipe directly to zstd to avoid slow disk I/O
+          docker save frontend-app:${{ github.sha }} | zstd -1 -T0 > frontend-app-image.tar.zst
       - name: Upload image
         uses: actions/upload-artifact@v4
         with:
