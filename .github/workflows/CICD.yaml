@@ -22,7 +22,6 @@ jobs:
       - name: Run Gitleaks
         id: gitleaks_scan
         uses: gitleaks/gitleaks-action@v2
-        continue-on-error: true
         with:
           args: detect --redact --verbose --exit-code=2
 
@@ -68,8 +67,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Run Semgrep Full Scan
         run: |
-          semgrep scan --config auto --json --output semgrep-results.json . || true
-          semgrep scan --config auto --sarif --output semgrep-results.sarif . || true
+          semgrep scan --config auto --json --output semgrep-results.json .
+          semgrep scan --config auto --sarif --output semgrep-results.sarif .
       - name: Upload SARIF Report
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -97,9 +96,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run Snyk Code Test
-        continue-on-error: true
         run: |
-          npx snyk code test --json > snyk-code-results.json || true
+          npx snyk code test --json > snyk-code-results.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: Upload Results
@@ -130,6 +128,8 @@ jobs:
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+             GENERATE_SOURCEMAP=false
       - name: Save and Compress Image
         run: |
           # Pipe directly to zstd to avoid slow disk I/O
@@ -140,6 +140,7 @@ jobs:
           name: docker-image
           path: frontend-app-image.tar.zst
           retention-days: 1
+          compression-level: 0
 
   # ============================================================
   # STAGE 4: CONTAINER SECURITY & DAST
@@ -165,7 +166,7 @@ jobs:
           image-ref: "frontend-app:${{ github.sha }}"
           format: "json"
           output: "trivy-results.json"
-          exit-code: "0"
+          exit-code: "1"
           ignore-unfixed: true
           severity: "CRITICAL,HIGH"
       - name: Generate HTML Report
@@ -196,13 +197,12 @@ jobs:
         run: |
           zstd -d -c frontend-app-image.tar.zst | docker load
       - name: Run Snyk Container Scan
-        continue-on-error: true
         run: |
           docker run --rm \
             -e SNYK_TOKEN=${{ secrets.SNYK_TOKEN }} \
             -v /var/run/docker.sock:/var/run/docker.sock \
             snyk/snyk:docker snyk container test frontend-app:${{ github.sha }} \
-            --json > snyk-container-results.json || true
+            --json > snyk-container-results.json
       - name: Upload Results
         uses: actions/upload-artifact@v4
         if: always()
@@ -248,7 +248,8 @@ jobs:
         uses: zaproxy/action-baseline@v0.13.0
         with:
           target: ${{ env.ZAP_TARGET }}
-          cmd_options: '-a -I -x baseline.xml -J zap-report.json'
+          cmd_options: '-a -I -m 2 -x baseline.xml -J zap-report.json'
+          fail_action: true
 
       - name: Generate HTML Report
         if: always()
