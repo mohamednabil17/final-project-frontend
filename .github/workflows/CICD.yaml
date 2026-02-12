@@ -226,7 +226,9 @@ jobs:
       - name: Load and Run
         run: |
           zstd -d -c frontend-app-image.tar.zst | docker load
-          docker run -d -p 80:80 --name zap-target frontend-app:${{ github.sha }}
+          docker run -d -p 80:80 --name zap-target \
+            --add-host backend.backend-ns.svc.cluster.local:127.0.0.1 \
+            frontend-app:${{ github.sha }}
           echo "ZAP_TARGET=http://172.17.0.1" >> $GITHUB_ENV
           echo "LOCAL_TARGET=http://127.0.0.1" >> $GITHUB_ENV
 

@@ -7,7 +7,8 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
+ARG GENERATE_SOURCEMAP=true
+RUN GENERATE_SOURCEMAP=$GENERATE_SOURCEMAP npm run build
 
 FROM nginx:alpine
 # Remove default nginx static assets
