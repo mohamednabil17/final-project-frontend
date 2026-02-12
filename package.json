@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Frontend application for the Microservices project",
   "private": true,
+  "proxy": "http://localhost:5000",
   "author": "Mohamed",
   "license": "ISC",
   "dependencies": {
